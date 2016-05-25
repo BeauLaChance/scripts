@@ -1,0 +1,40 @@
+#!/bin/bash
+
+myip () {
+    IP=$(curl -s checkip.dyndns.org | awk '{ print $NF }' | awk -F\< '{print $1}')
+}
+
+init () {
+    OLDIP=$(cat /home/mouse/scripts/tmp/external_ip.txt)
+    myip
+    if [ "$(cat /home/mouse/scripts/tmp/external_ip.txt)" == "" ]; then
+    {   
+         echo "Initial IP setup"
+         echo $IP > /home/mouse/scripts/tmp/external_ip.txt
+    }
+    fi
+}
+
+runssh () {
+    ssh root@64.64.3.44 "rm /home/demonadmin/public_html/plex_ip.txt"
+    scp /home/mouse/scripts/tmp/external_ip.txt root@64.64.3.44:/home/demonadmin/public_html/plex_ip.txt
+}
+
+#Save old IP, update current IP, initialize save file if needed
+init
+
+#Compare the IPs and update demon if needed
+if [ "$IP" == "$OLDIP" ]; then
+{
+     echo "Same IP, no change required."
+}
+else
+{
+     echo "Different IP, update and send to demon coffee."
+     echo $IP > /home/mouse/scripts/tmp/external_ip.txt
+     runssh
+}
+fi
+
+#Debug if saved correctly
+#cat /home/mouse/scripts/tmp/external_ip.txt

@@ -1,0 +1,80 @@
+#!/bin/bash
+# This script checks the health of disks, a modified version of Chris Sidiropoulos' script
+# https://csidiropoulos.wordpress.com/2013/12/13/bash-script-to-monitor-hard-disk-health-and-send-an-e-mail-on-error/
+
+# Warning emails are send via SSMTP. The SSMTP service setup can be found at the following configuration files :
+# /etc/ssmtp/ssmtp.conf
+# /etc/ssmtp/revaliases
+
+# Instructions for SSMTP :
+# https://www.nixtutor.com/linux/send-mail-with-gmail-and-ssmtp/
+
+#Define a friendly name for this machine
+mname="Media server"
+ 
+#Location to temporary store the error log
+logloc="/home/mouse/logs"
+#Set default for not sending emails
+sendm="0"
+ 
+# Disks to check
+disks="/dev/sda
+/dev/sdb"
+ 
+# Setting up path
+PATH="$PATH:/usr/bin:/usr/sbin"
+ 
+# variable containing all needed commands
+needed_commands="smartctl awk mail"
+ 
+runssh () {
+    scp $logloc/diskerror.log root@64.64.3.44:/home/demonadmin/public_html/ 
+    ssh root@64.64.3.44 "mail -r 'root@demon.coffee (DemonAdmin)' -s '$mname - Disks $fdisks are about to fail.' beau.lachance@gmail.com < /home/demonadmin/public_html/diskerror.log" 
+}
+
+# Checking if all needed programs are available on system
+for command in $needed_commands
+do
+  if ! hash "$command" > /dev/null 2>&1
+  then
+    echo "$command not found on system" 1>&2
+    exit 1
+  fi
+done
+ 
+# Checking disk
+for disk in $disks
+do
+  # Creating an array with results
+  declare -a status=(`smartctl -a -d ata $disk | awk '/Reallocated_Sector_Ct/ || /Seek_Error_Rate/ { print $2" "$NF }'`)
+
+# Checking that we do not have any Reallocated Sectors
+  if [ "${status[1]}" == "0" ]
+  then
+    echo "$mname Warning: Disk $disk has errors! ${status[0]} ${status[1]} ${status[2]} ${status[3]}. Following complete smartctl output." >> diskerror.log
+    smartctl -a -d ata $disk >> $logloc/diskerror.log
+    failed=("${failed[@]}" "$disk")
+    sendm="1"
+  fi
+done
+
+# For debug of email sending issues, uncomment the below
+#sendm=1
+
+# Send an email if needed containing the failed diks (fdisks) info.
+if [ $sendm == 1 ]; then
+  fdisks=${failed[@]}
+  
+  # If you have access to a static IP with port 25 mail access, and want to send it that way, edit the runssh function and uncomment this line. 
+  #runssh 
+
+  # Otherwise, we'll be using SSMTP.
+  # The simple SMTP service (SSMTP) needs the To/From/Subject lines added to the message, so we'll insert that to the beginning of the log file with 'sed'
+  sed -i "1s/^/Subject: $mname disks $fdisks are about to fail\n/" $logloc/diskerror.log  
+  sed -i '1s/^/From: mousemediaserver@gmail.com\n/' $logloc/diskerror.log
+  sed -i '1s/^/To: beau.lachance@gmail.com\n/' $logloc/diskerror.log  
+
+  #cat $logloc/diskerror.log
+  ssmtp beau.lachance@gmail.com < $logloc/diskerror.log  
+  rm -rf $logloc/diskerror.log
+fi
