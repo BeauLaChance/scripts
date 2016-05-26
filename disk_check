@@ -2,7 +2,7 @@
 # This script checks the health of disks, a modified version of Chris Sidiropoulos' script
 # https://csidiropoulos.wordpress.com/2013/12/13/bash-script-to-monitor-hard-disk-health-and-send-an-e-mail-on-error/
 
-# Warning emails are send via SSMTP. The SSMTP service setup can be found at the following configuration files :
+# Warning emails are sent via SSMTP. The SSMTP service setup can be found at the following configuration files :
 # /etc/ssmtp/ssmtp.conf
 # /etc/ssmtp/revaliases
 
