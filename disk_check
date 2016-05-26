@@ -28,8 +28,8 @@ PATH="$PATH:/usr/bin:/usr/sbin"
 needed_commands="smartctl awk mail"
  
 runssh () {
-    scp $logloc/diskerror.log root@64.64.3.44:/home/demonadmin/public_html/ 
-    ssh root@64.64.3.44 "mail -r 'root@demon.coffee (DemonAdmin)' -s '$mname - Disks $fdisks are about to fail.' beau.lachance@gmail.com < /home/demonadmin/public_html/diskerror.log" 
+    scp $logloc/diskerror.log root@xx.xx.xx.xx:/home/demonadmin/public_html/ 
+    ssh root@xx.xx.xx.xx "mail -r 'root@demon.coffee (DemonAdmin)' -s '$mname - Disks $fdisks are about to fail.' youremail@example.com < /home/demonadmin/public_html/diskerror.log" 
 }
 
 # Checking if all needed programs are available on system
@@ -71,10 +71,10 @@ if [ $sendm == 1 ]; then
   # Otherwise, we'll be using SSMTP.
   # The simple SMTP service (SSMTP) needs the To/From/Subject lines added to the message, so we'll insert that to the beginning of the log file with 'sed'
   sed -i "1s/^/Subject: $mname disks $fdisks are about to fail\n/" $logloc/diskerror.log  
-  sed -i '1s/^/From: mousemediaserver@gmail.com\n/' $logloc/diskerror.log
-  sed -i '1s/^/To: beau.lachance@gmail.com\n/' $logloc/diskerror.log  
+  sed -i '1s/^/From: sendingemail@gmail.com\n/' $logloc/diskerror.log
+  sed -i '1s/^/To: recievingemail@gmail.com\n/' $logloc/diskerror.log  
 
   #cat $logloc/diskerror.log
-  ssmtp beau.lachance@gmail.com < $logloc/diskerror.log  
+  ssmtp recievingemail@gmail.com < $logloc/diskerror.log  
   rm -rf $logloc/diskerror.log
 fi
